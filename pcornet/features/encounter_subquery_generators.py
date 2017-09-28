@@ -20,7 +20,7 @@ def generate_a_yes_no_count_by_encounterid_with_dict(varlabel, tablename, list_o
         getattr(models, tablename).encounterid,
         func.sum(case(
                     [
-                        (_booleans_from_list_of_dicts(tablename, list_of_dicts), 1)
+                        (booleans_from_list_of_dicts(tablename, list_of_dicts), 1)
                     ],
                     else_=0
                 )
