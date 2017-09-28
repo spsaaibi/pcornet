@@ -29,7 +29,7 @@ def load_icd10_gems():
 
 
 def load_labs():
-    df = pd.read_csv(join(module_path, 'labs.csv'))
+    df = pd.read_csv(join(module_path, 'labs.txt'))
 
     return df
 
@@ -75,7 +75,7 @@ def load_medications():
     :return: pandas.DataFrame with two columns: proprietaryname and nonproprietaryname
     """
     df = pd.read_csv(
-        join(module_path, 'newmeds.csv')
+        join(module_path, 'newmeds.txt')
         )
 
     return df
