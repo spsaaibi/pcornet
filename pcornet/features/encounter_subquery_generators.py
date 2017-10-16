@@ -130,44 +130,44 @@ def generate_first_value_by_between_admit_dicharge_date(varlabel, tablename, lis
         models.Encounter.admit_date,
         func.min(getattr(getattr(models, tablename), date_var)).label('min_date'),
         models.Encounter.discharge_date
-    )\
-    .filter(
-        myfilter
-    )\
-    .join(models.Encounter, and_(
-        models.Encounter.patid == getattr(models, tablename).patid,
-        between(getattr(getattr(models, tablename), date_var), models.Encounter.admit_date,
-                models.Encounter.discharge_date)
-    ))\
-    .group_by(
-        getattr(models, tablename).patid,
-        models.Encounter.encounterid,
-        models.Encounter.admit_date,
-        models.Encounter.discharge_date
-    )\
-    .subquery()
+        )\
+        .filter(
+            myfilter
+        )\
+        .join(models.Encounter, and_(
+            models.Encounter.patid == getattr(models, tablename).patid,
+            between(getattr(getattr(models, tablename), date_var), models.Encounter.admit_date,
+                    models.Encounter.discharge_date)
+        ))\
+        .group_by(
+            getattr(models, tablename).patid,
+            models.Encounter.encounterid,
+            models.Encounter.admit_date,
+            models.Encounter.discharge_date
+        )\
+        .subquery()
 
     temp2 = session.query(
         temp.c.patid,
         temp.c.encounterid,
         temp.c.min_date,
         func.avg(getattr(getattr(models, tablename), value_var)).label(varlabel)
-    ) \
-    .group_by(
-        temp.c.patid,
-        temp.c.encounterid,
-        temp.c.min_date
-    )\
-    .filter(
-        myfilter
-    )\
-    .outerjoin(getattr(models, tablename), and_(
-        getattr(models, tablename).patid == temp.c.patid,
-        getattr(getattr(models, tablename), date_var) == temp.c.min_date
-    ))\
-    .order_by(
-        temp.c.patid,
-        temp.c.encounterid
-    ) \
-    .subquery()
+        ) \
+        .group_by(
+            temp.c.patid,
+            temp.c.encounterid,
+            temp.c.min_date
+        )\
+        .filter(
+            myfilter
+        )\
+        .outerjoin(getattr(models, tablename), and_(
+            getattr(models, tablename).patid == temp.c.patid,
+            getattr(getattr(models, tablename), date_var) == temp.c.min_date
+        ))\
+        .order_by(
+            temp.c.patid,
+            temp.c.encounterid
+        ) \
+        .subquery()
     return temp2
