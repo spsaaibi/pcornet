@@ -109,7 +109,7 @@ CARDIAC_ARREST = {
     ]
 }
 
-VENTRIBULAR_ARR = {
+VENTRICULAR_ARR = {
     'diagnosis': [
         {
             'raw_dx': ['427.41', '427.1', '427.42'],
