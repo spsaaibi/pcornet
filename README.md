@@ -16,7 +16,7 @@ things possible
 ```
 from sqlalchemy import create_engine
 from pcornet import Base
-engine = create_engine('sqlite:///pcornet.db')
+engine = create_engine('postgresql+psycopg2://django_pcornet:django_pcornet_password@localhost/django_pcornet')
 Base.metadata.create_all(engine)
 ```
 

@@ -15,5 +15,7 @@ setup(
         'Faker==0.7.18',
         'factory-boy==2.9.2',
         'psycopg2==2.7.3',
-        'pandas==0.20.3'],
+        'pandas==0.20.3',
+        'sqlalchemy-views==0.2.1'
+    ],
 )

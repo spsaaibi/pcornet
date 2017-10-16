@@ -343,3 +343,11 @@ TROPONIN_I = {
     ]
 }
 
+CHOLESTEROL = {
+    'lab_result_cm': [
+        {
+            'raw_sedi_test_desc': ['HDL CHOLESTEROL', 'LDL Chol', 'Cholesterol, Total']
+        }
+    ]
+}
+
