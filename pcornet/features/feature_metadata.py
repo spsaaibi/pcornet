@@ -56,6 +56,19 @@ NSTEMI = {
     ]
 }
 
+NSTEMI_NBN = {
+    'diagnosis': [
+        {
+            'raw_dx': ['410.72', '410.71', '410.70'],
+            'raw_dx_type': ['ICD-9-CM']
+        },
+        {
+            'raw_dx': ['I21.4', 'I22.2'],
+            'raw_dx_type': ['ICD-10-CM']
+        }
+    ]
+}
+
 TRTBP = {
     'prescribing': [
         {
@@ -351,3 +364,24 @@ CHOLESTEROL = {
     ]
 }
 
+CHRONIC_LUNG_DISEASE = {
+    'diagnosis': [
+        {
+            'raw_dx': ['770.7'],
+            'raw_dx_type': ['ICD-9-CM']
+        },
+        {
+            'raw_dx': ['P27.9', 'P27.1', 'P27.0', 'P27.8'],
+            'raw_dx_type': ['ICD-10-CM']
+        }
+    ]
+}
+
+CRITICAL_CARE = {
+    'procedures': [
+        {
+            'px': ['99291'],
+            'px_type': ['CH']
+        }
+    ]
+}

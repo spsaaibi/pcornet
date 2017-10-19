@@ -110,6 +110,57 @@ def generate_a_cumulative_sum_by_encounterid_with_dicts(varlabel, tablename, lis
     return temp2
 
 
+def generate_first_value_by_between_admit_dicharge_date(
+        varlabel,
+        tablename,
+        date_var,
+        time_var,
+        value_var,
+        list_of_dicts = None):
+    """
+    This will create a window function that will allow us to pull ALL occurances of a match within a window
+    of an encounter. In other words, all occurances where admit_date <= date_var <= discharge_date. This is a useful
+    function when no encounterid is available. This occurs in tables like lab_result_cm.
+    :param varlabel:
+    :param tablename:
+    :param list_of_dicts:
+    :param date_var:
+    :param time_var:
+    :param value_var:
+    :return: a sqlalchemy.query.subquery that executes conditions above with both patid, admit_date, discharge_date, date_var
+    """
+    myfilter = booleans_from_list_of_dicts(tablename, list_of_dicts)
+
+    temp = session.query(
+        getattr(models, tablename).patid,
+        func.to_date(func.to_char(getattr(getattr(models, tablename), date_var), 'DD-MON-YY')
+                     + ' '
+                     + getattr(getattr(models,tablename), time_var),
+                     'DD-MON-YY HH24:MI').label('between_datetime'),
+        getattr(getattr(models, tablename), value_var))\
+        .filter(myfilter) \
+        .subquery()
+
+    temp2 = session.query(
+        models.Encounter.patid,
+        models.Encounter.encounterid,
+        func.to_date(func.to_char(models.Encounter.admit_date, 'DD-MON-YY') + ' 00:01',
+                     'DD-MON-YY HH24:MI').label('admit_datetime'),
+        temp.c.between_datetime,
+        func.to_date(func.to_char(models.Encounter.discharge_date, 'DD-MON-YY') + ' 23:59',
+                     'DD-MON-YY HH24:MI').label('discharge_datetime'),
+        getattr(temp.c, value_var).label(varlabel))\
+        .join(temp, and_(models.Encounter.patid == temp.c.patid)) \
+        .filter(between(temp.c.between_datetime,
+                        func.to_date(func.to_char(models.Encounter.admit_date, 'DD-MON-YY') + ' 00:01',
+                                     'DD-MON-YY HH24:MI').label('admit_datetime'),
+                        func.to_date(func.to_char(models.Encounter.discharge_date, 'DD-MON-YY') + ' 23:59',
+                                     'DD-MON-YY HH24:MI').label('discharge_datetime'))) \
+        .order_by(models.Encounter.patid, models.Encounter.encounterid, temp.c.between_datetime)\
+        .subquery()
+    return temp2
+
+
 def generate_first_value_by_between_admit_dicharge_date(varlabel, tablename, date_var, value_var, list_of_dicts = None):
     """
     This will create a window function that will allow us to pull the first occurance of a match within a window
