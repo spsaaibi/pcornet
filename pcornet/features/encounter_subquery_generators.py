@@ -110,7 +110,7 @@ def generate_a_cumulative_sum_by_encounterid_with_dicts(varlabel, tablename, lis
     return temp2
 
 
-def generate_first_value_by_between_admit_dicharge_date(
+def generate_allvalues_between_admit_discharge_date_with_subset(
         varlabel,
         tablename,
         date_var,
@@ -118,7 +118,7 @@ def generate_first_value_by_between_admit_dicharge_date(
         value_var,
         list_of_dicts = None):
     """
-    This will create a window function that will allow us to pull ALL occurances of a match within a window
+    This will create a window function that will allow us to pull all occurances of a match within a window
     of an encounter. In other words, all occurances where admit_date <= date_var <= discharge_date. This is a useful
     function when no encounterid is available. This occurs in tables like lab_result_cm.
     :param varlabel:
@@ -133,35 +133,89 @@ def generate_first_value_by_between_admit_dicharge_date(
 
     temp = session.query(
         getattr(models, tablename).patid,
-        func.to_date(func.to_char(getattr(getattr(models, tablename), date_var), 'DD-MON-YY')
-                     + ' '
-                     + getattr(getattr(models,tablename), time_var),
-                     'DD-MON-YY HH24:MI').label('between_datetime'),
-        getattr(getattr(models, tablename), value_var))\
-        .filter(myfilter) \
+        getattr(getattr(models, tablename), date_var).label('date'),
+        func.to_date(
+            func.to_char(
+                getattr(getattr(models, tablename), date_var), 'DD-MON-YY')
+                + ' '
+                + getattr(getattr(models,tablename), time_var),
+                'DD-MON-YY HH24:MI').label('datetime'),
+        getattr(getattr(models, tablename), value_var).label(value_var))\
+        .filter(myfilter)\
         .subquery()
 
     temp2 = session.query(
         models.Encounter.patid,
         models.Encounter.encounterid,
-        func.to_date(func.to_char(models.Encounter.admit_date, 'DD-MON-YY') + ' 00:01',
-                     'DD-MON-YY HH24:MI').label('admit_datetime'),
-        temp.c.between_datetime,
-        func.to_date(func.to_char(models.Encounter.discharge_date, 'DD-MON-YY') + ' 23:59',
-                     'DD-MON-YY HH24:MI').label('discharge_datetime'),
-        getattr(temp.c, value_var).label(varlabel))\
-        .join(temp, and_(models.Encounter.patid == temp.c.patid)) \
-        .filter(between(temp.c.between_datetime,
-                        func.to_date(func.to_char(models.Encounter.admit_date, 'DD-MON-YY') + ' 00:01',
-                                     'DD-MON-YY HH24:MI').label('admit_datetime'),
-                        func.to_date(func.to_char(models.Encounter.discharge_date, 'DD-MON-YY') + ' 23:59',
-                                     'DD-MON-YY HH24:MI').label('discharge_datetime'))) \
-        .order_by(models.Encounter.patid, models.Encounter.encounterid, temp.c.between_datetime)\
+        models.Encounter.admit_date,
+        temp.c.datetime,
+        models.Encounter.discharge_date,
+        getattr(temp.c, value_var).label(varlabel)) \
+        .join(temp, and_(
+        models.Encounter.patid == temp.c.patid)) \
+        .filter(between(temp.c.date,
+                        models.Encounter.admit_date,
+                        models.Encounter.discharge_date)) \
+        .order_by(models.Encounter.patid, models.Encounter.encounterid, temp.c.datetime).subquery()
+
+    return temp2
+
+def generate_allvalues_between_admit_discharge_date(
+        varlabel,
+        tablename,
+        date_var,
+        time_var,
+        value_var):
+    """
+    This will create a window function that will allow us to pull all occurances of a match within a window
+    of an encounter. In other words, all occurances where admit_date <= date_var <= discharge_date. This is a useful
+    function when no encounterid is available. This occurs in tables like lab_result_cm.
+    :param varlabel:
+    :param tablename:
+    :param list_of_dicts:
+    :param date_var:
+    :param time_var:
+    :param value_var:
+    :return: a sqlalchemy.query.subquery that executes conditions above with both patid, admit_date, discharge_date, date_var
+    """
+
+    temp = session.query(
+        getattr(models, tablename).patid,
+        getattr(getattr(models, tablename), date_var).label('date'),
+        func.to_date(
+            func.to_char(
+                getattr(getattr(models, tablename), date_var), 'DD-MON-YY')
+                + ' '
+                + getattr(getattr(models,tablename), time_var),
+                'DD-MON-YY HH24:MI').label('datetime'),
+        getattr(getattr(models, tablename), value_var).label(value_var)) \
+        .filter(getattr(getattr(models, tablename), value_var).isnot(None)) \
         .subquery()
+
+    temp2 = session.query(
+        models.Encounter.patid,
+        models.Encounter.encounterid,
+        models.Encounter.admit_date,
+        temp.c.datetime,
+        models.Encounter.discharge_date,
+        getattr(temp.c, value_var).label(varlabel)) \
+        .join(temp, and_(
+        models.Encounter.patid == temp.c.patid)) \
+        .filter(between(temp.c.date,
+                        models.Encounter.admit_date,
+                        models.Encounter.discharge_date)) \
+        .order_by(models.Encounter.patid, models.Encounter.encounterid, temp.c.datetime).subquery()
+
     return temp2
 
 
-def generate_first_value_by_between_admit_dicharge_date(varlabel, tablename, date_var, value_var, list_of_dicts = None):
+def generate_first_value_between_admit_discharge_date(
+        varlabel,
+        tablename,
+        date_var,
+        time_var,
+        value_var,
+        list_of_dicts = None):
     """
     This will create a window function that will allow us to pull the first occurance of a match within a window
     of an encounter. In other words, the first occurance where admit_date <= date_var <= discharge_date. This is a useful
@@ -170,98 +224,39 @@ def generate_first_value_by_between_admit_dicharge_date(varlabel, tablename, dat
     :param tablename:
     :param list_of_dicts:
     :param date_var:
+    :param time_var:
     :param value_var:
     :return: a sqlalchemy.query.subquery that executes conditions above with both patid, admit_date, discharge_date, date_var
     """
-    if list_of_dicts is not None:
-        myfilter = booleans_from_list_of_dicts(tablename, list_of_dicts)
-
-        temp = session.query(
-            getattr(models, tablename).patid,
-            models.Encounter.encounterid,
-            models.Encounter.admit_date,
-            func.min(getattr(getattr(models, tablename), date_var)).label('min_date'),
-            models.Encounter.discharge_date
-            )\
-            .filter(
-                myfilter
-            )\
-            .join(models.Encounter, and_(
-                models.Encounter.patid == getattr(models, tablename).patid,
-                between(getattr(getattr(models, tablename), date_var), models.Encounter.admit_date,
-                        models.Encounter.discharge_date)
-            ))\
-            .group_by(
-                getattr(models, tablename).patid,
-                models.Encounter.encounterid,
-                models.Encounter.admit_date,
-                models.Encounter.discharge_date
-            )\
-            .subquery()
-
-        temp2 = session.query(
-            temp.c.patid,
-            temp.c.encounterid,
-            temp.c.min_date,
-            func.avg(getattr(getattr(models, tablename), value_var)).label(varlabel)
-            ) \
-            .group_by(
-                temp.c.patid,
-                temp.c.encounterid,
-                temp.c.min_date
-            )\
-            .filter(
-                myfilter
-            )\
-            .outerjoin(getattr(models, tablename), and_(
-                getattr(models, tablename).patid == temp.c.patid,
-                getattr(getattr(models, tablename), date_var) == temp.c.min_date
-            ))\
-            .order_by(
-                temp.c.patid,
-                temp.c.encounterid
-            ) \
-            .subquery()
-        return temp2
+    if list_of_dicts is None:
+        all = generate_allvalues_between_admit_discharge_date(
+            varlabel,
+            tablename,
+            date_var,
+            time_var,
+            value_var
+        )
     else:
-        temp = session.query(
-            getattr(models, tablename).patid,
-            models.Encounter.encounterid,
-            models.Encounter.admit_date,
-            func.min(getattr(getattr(models, tablename), date_var)).label('min_date'),
-            models.Encounter.discharge_date
-            )\
-            .join(models.Encounter, and_(
-            models.Encounter.patid == getattr(models, tablename).patid,
-            between(getattr(getattr(models, tablename), date_var), models.Encounter.admit_date,
-                    models.Encounter.discharge_date)
-            ))\
-            .group_by(
-            getattr(models, tablename).patid,
-            models.Encounter.encounterid,
-            models.Encounter.admit_date,
-            models.Encounter.discharge_date
-            ) \
-            .subquery()
+        all = generate_allvalues_between_admit_discharge_date_with_subset(
+            varlabel,
+            tablename,
+            date_var,
+            time_var,
+            value_var,
+            list_of_dicts
+        )
 
-        temp2 = session.query(
-            temp.c.patid,
-            temp.c.encounterid,
-            temp.c.min_date,
-            func.avg(getattr(getattr(models, tablename), value_var)).label(varlabel)
-            ) \
-            .group_by(
-            temp.c.patid,
-            temp.c.encounterid,
-            temp.c.min_date
-            ) \
-            .outerjoin(getattr(models, tablename), and_(
-            getattr(models, tablename).patid == temp.c.patid,
-            getattr(getattr(models, tablename), date_var) == temp.c.min_date
-            )) \
-            .order_by(
-            temp.c.patid,
-            temp.c.encounterid
-            ) \
-            .subquery()
-        return temp2
+    temp3 = session.query(
+        all.c.patid,
+        all.c.encounterid,
+        func.min(all.c.datetime).label('min_datetime')
+        ).group_by(all.c.patid, all.c.encounterid).subquery()
+
+    temp4 = session.query(
+        all
+        ).filter(and_(
+            all.c.patid == temp3.c.patid,
+            all.c.encounterid == temp3.c.encounterid,
+            all.c.datetime == temp3.c.min_datetime
+        )).subquery()
+    return temp4
