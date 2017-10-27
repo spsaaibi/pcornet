@@ -41,8 +41,7 @@ def load_icd9_procedure():
     """
     df = pd.read_fwf(join(module_path, 'ICD9_SG.txt'),
                      widths=[5, 100],
-                     names=['icd9_px', 'desc'],
-                     dtype=object)
+                     names=['icd9_px', 'desc'])
     return df
 
 
